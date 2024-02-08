@@ -1,0 +1,44 @@
+cluster_name: 'MyCassandraCluster'
+num_tokens: 256
+data_file_directories:
+    - /var/lib/cassandra/data
+commitlog_directory: /var/lib/cassandra/commitlog
+hints_directory: /var/lib/cassandra/hints
+saved_caches_directory: /var/lib/cassandra/saved_caches
+
+# Commit log sync (periodic or batch)
+commitlog_sync: periodic
+commitlog_sync_period_in_ms: 10000
+# For batch mode, you'd use commitlog_sync: batch
+# and also define commitlog_sync_batch_window_in_ms, e.g., 2
+
+# The listen address for Cassandra nodes communication
+listen_address: cassandra
+
+# The RPC address for client connections
+rpc_address: 0.0.0.0
+broadcast_rpc_address: cassandra
+
+# Endpoint snitch that tells Cassandra about your network topology to route requests efficiently
+endpoint_snitch: SimpleSnitch
+
+# Authentication and Authorization for secure access
+authenticator: PasswordAuthenticator
+authorizer: CassandraAuthorizer
+role_manager: CassandraRoleManager
+
+# Enabling client connections
+start_native_transport: true
+native_transport_port: 9042
+start_rpc: false
+
+# Memory, GC, and performance settings
+# Adjust based on your Docker container's allocated resources
+MAX_HEAP_SIZE: "4G"
+HEAP_NEWSIZE: "800M"
+
+# Seeds for node discovery within the cluster
+# Use the container name or IP address of the seed node(s)
+- seeds: "cassandra"
+
+# Additional settings can include compaction, GC tuning, and more depending on your use case.

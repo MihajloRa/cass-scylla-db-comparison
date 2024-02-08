@@ -1,0 +1,125 @@
+networks:
+  cassandra: 
+    driver: bridge
+
+
+services:
+
+  cassandra1:
+    image: cassandra:latest
+    container_name: cassandra1
+    ports:
+      - "9042:9042"
+    volumes:
+      - cassandra_data1:/var/lib/cassandra
+    environment:
+      - HEAP_NEWSIZE=512M
+      - MAX_HEAP_SIZE=2048M
+      - CASSANDRA_DC=datacenter1
+      - CASSANDRA_RACK=rack1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_AUTHENTICATOR=PasswordAuthenticator
+      - CASSANDRA_AUTHORIZER=CassandraAuthorizer
+      - CASSANDRA_PASSWORD_AUTHENTICATOR_ENABLED=true
+      - CASSANDRA_SEEDS=cassandra1,cassandra2,cassandra3
+    networks:
+      - cassandra
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 4G
+    
+  cassandra2:
+    image: cassandra:latest
+    container_name: cassandra2
+    ports:
+      - "9043:9042"
+    volumes:
+      - cassandra_data2:/var/lib/cassandra
+    environment:
+      - HEAP_NEWSIZE=512M
+      - MAX_HEAP_SIZE=2048M
+      - CASSANDRA_DC=datacenter1
+      - CASSANDRA_RACK=rack2
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_AUTHENTICATOR=PasswordAuthenticator
+      - CASSANDRA_AUTHORIZER=CassandraAuthorizer
+      - CASSANDRA_PASSWORD_AUTHENTICATOR_ENABLED=true
+      - CASSANDRA_SEEDS=cassandra1,cassandra2,cassandra3
+    networks:
+      - cassandra
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 4G
+  
+  # cassandra3:
+  #   image: cassandra:latest
+  #   container_name: cassandra3
+  #   ports:
+  #     - "9044:9042"
+  #   volumes:
+  #     - cassandra_data3:/var/lib/cassandra
+  #   environment:
+  #     - HEAP_NEWSIZE=256M
+  #     - MAX_HEAP_SIZE=1024M
+  #     - CASSANDRA_DC=datacenter1
+  #     - CASSANDRA_RACK=rack3
+  #     - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+  #     - CASSANDRA_AUTHENTICATOR=PasswordAuthenticator
+  #     - CASSANDRA_AUTHORIZER=CassandraAuthorizer
+  #     - CASSANDRA_PASSWORD_AUTHENTICATOR_ENABLED=true
+  #     - CASSANDRA_SEEDS=cassandra1,cassandra2,cassandra3
+  #   networks:
+  #     - cassandra
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '1.0'
+  #         memory: 2G
+
+  cassandra_loader:
+    container_name: cassandra_loader
+    image: cassandra:latest
+    depends_on:
+      - cassandra2
+    volumes:
+      - ./schema.cql:/cassandra_scripts/schema.cql
+      - ./init-db.sh:/cassandra_scripts/init-db.sh
+    entrypoint: [ "bash", "/cassandra_scripts/init-db.sh" ]
+    networks:
+      - cassandra
+
+  # cassandra1-exporter:
+  #   image: bitnami/cassandra-exporter:latest
+  #   depends_on:
+  #     - cassandra1
+  #   environment:
+  #     - CASSANDRA_HOST=cassandra
+  #     - CASSANDRA_PORT=9042
+  #   ports:
+  #     - "8080:8080"
+  #   networks:
+  #     - cassandra
+
+  # cassandra2-exporter:
+  #   image: bitnami/cassandra-exporter:latest
+  #   depends_on:
+  #     - cassandra2
+  #   environment:
+  #     - CASSANDRA_HOST=cassandra2
+  #     - CASSANDRA_PORT=9042
+  #     - JMX_PORT=7199 # Add this if your exporter supports it directly
+  #   ports:
+  #     - "8081:8080"
+  #   networks:
+  #     - cassandra
+
+
+
+volumes:
+  cassandra_data1:
+  cassandra_data2:
+  cassandra_data3:

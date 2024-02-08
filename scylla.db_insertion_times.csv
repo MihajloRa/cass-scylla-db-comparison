@@ -1,0 +1,2 @@
+Operation Name,Average Time per Batch (seconds),Total Operations,Total Time (seconds),Batch Size
+populate_db_measurements,5.510813764263938,3885066,1070.493759393692,20000

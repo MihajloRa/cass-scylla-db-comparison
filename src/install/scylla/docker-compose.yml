@@ -1,0 +1,142 @@
+
+networks:
+  scylla_net:
+    name: scylla_net
+    driver: bridge
+
+services:
+  scylladb1:
+    image: scylladb/scylla:5.2.14
+    container_name: scylladb1
+    ports:
+      - "9042:9042"
+      - "9180:9180"
+    volumes:
+      - scylladb_data1:/var/lib/scylla
+      # - "./scylla.yaml:/etc/scylla/scylla.yaml"
+      - "./cassandra-rack1dc.properties:/etc/scylla/cassandra-rackdc.properties"
+      - "./init-db.sh:/docker-entrypoint-initdb.d/init-scylladb.sh"
+      - "./schema.cql:/schema.cql"
+    command: "--smp 1 --memory 2G --overprovisioned 1 --seeds=scylladb1 --developer-mode=1 --api-address 0.0.0.0"
+    restart: always
+    environment:
+      - SCYLLA_USERNAME=scylla_user
+      - SCYLLA_PASSWORD=scylla_pass
+    networks:
+      - scylla_net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 4G
+
+  scylladb2:
+    image: scylladb/scylla:5.2.14
+    container_name: scylladb2
+    restart: always
+    ports:
+      - "9043:9042"
+      - "9181:9180"
+    volumes:
+      - scylladb_data2:/var/lib/scylla
+      # - "./scylla.yaml:/etc/scylla/scylla.yaml"
+      - "./cassandra-rack2dc.properties:/etc/scylla/cassandra-rackdc.properties"
+    command:
+      - "--smp"
+      - "1"
+      - "--memory"
+      - "2G"
+      - "--overprovisioned"
+      - "1"
+      - "--seeds=scylladb1"
+      - "--developer-mode=1"
+      - "--api-address 0.0.0.0"
+    environment:
+      - SCYLLA_USERNAME=scylla_user
+      - SCYLLA_PASSWORD=scylla_pass
+    depends_on:
+      - scylladb1
+    networks:
+      - scylla_net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 4G
+
+
+  # scylladb3:
+  #   image: scylladb/scylla:latest
+  #   container_name: scylladb3
+  #   restart: always
+  #   ports:
+  #     - "9044:9042"
+  #     - "9182:9180"
+  #   volumes:
+  #     - scylladb_data3:/var/lib/scylla
+  #     # - "./scylla.yaml:/etc/scylla/scylla.yaml"
+  #     - "./cassandra-rackdc.properties:/etc/scylla/cassandra-rackdc.properties"
+  #   command: --smp 1 --memory 2G --overprovisioned 0 --seeds=scylladb1 --developer-mode=1 --api-address 0.0.0.0
+  #   environment:
+  #     - SCYLLA_USERNAME=scylla_user
+  #     - SCYLLA_PASSWORD=scylla_pass
+  #   depends_on:
+  #     - scylladb1
+  #   networks:
+  #     scylla_net:
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '2.0'
+  #         memory: 4G
+
+  scylladb_loader:
+    container_name: scylla-load-keyspace
+    image: scylladb/scylla:5.2.14
+    depends_on:
+      - scylladb1
+    volumes:
+      - ./schema.cql:/scylla_scripts/schema.cql
+      - ./init-db.sh:/scylla_scripts/init-db.sh
+    entrypoint: [ "bash", "/scylla_scripts/init-db.sh" ]
+    networks:
+      - scylla_net
+
+
+  # prometheus:
+  #   image: prom/prometheus
+  #   volumes:
+  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #   ports:
+  #     - "9090:9090"
+  #   networks:
+  #     - scylla_net
+
+  # grafana:
+  #   image: grafana/grafana
+  #   environment:
+  #     GF_SECURITY_ADMIN_PASSWORD: "your_password"
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - prometheus
+  #   networks:
+  #     - scylla_net
+
+  # node_exporter:
+  #   image: quay.io/prometheus/node-exporter:latest
+  #   container_name: node_exporter
+  #   command:
+  #     - '--path.rootfs=/host'
+  #   network_mode: host
+  #   pid: host
+  #   restart: unless-stopped
+  #   volumes:
+  #     - '/:/host:ro,rslave'
+
+
+volumes:
+  scylladb_data1:
+  scylladb_data2:
