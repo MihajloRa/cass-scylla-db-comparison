@@ -63,22 +63,17 @@ def execute_concurrent_inserts(session: Session, batch_data, station_code):
         INSERT INTO daily_pollutant_values_by_station (station_code, measurement_date, pollutant_code, avg_value, max_value, min_value, air_quality_label, count_measurements)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """)
-    start_time = time.time()  # Start timing
+    start_time = time.time() 
 
 
-    # Prepare arguments for each insert operation
     arguments = []
     for _,row in batch_data.iterrows():
-        # Fetch thresholds directly from the global DataFrame
         thresholds_row = thresholds.loc[row['pollutant_code']]
 
-        # Calculate air quality label
         air_quality_label = calculate_air_quality_label(row['mean'], thresholds_row)
 
-        # Append arguments for this row
         arguments.append((station_code, row['measurement_date'], row['pollutant_code'], row['mean'], row['max'], row['min'], air_quality_label, row['count']))
 
-    # Execute insert operations concurrently
     execute_concurrent_with_args(session, insert_query, arguments, concurrency=100)
     end_time = time.time()
     elapsed_time = end_time - start_time

@@ -40,7 +40,7 @@ def populate_db_pollutants(session: Session):
         VALUES (?, ?, ?, ?, ?, ?, ?)
     """)
 
-    script_dir = os.path.dirname(__file__)  # Directory of the script
+    script_dir = os.path.dirname(__file__) 
     file_path = os.path.join(script_dir, 'data', 'Measurement_item_info.csv')
 
     df = pd.read_csv(file_path, delimiter=",")
@@ -60,7 +60,7 @@ def process_and_insert_data(chunk: DataFrame, session: Session):
     for _,row in chunk.iterrows():
         station_code = row['Station code']
         measurement_date_time = row['Measurement date'].to_pydatetime()
-        ts = uuid_from_time(measurement_date_time)  # Ensure conversion to datetime is correct
+        ts = uuid_from_time(measurement_date_time) 
         item_code = row['Item code']
         average_value = row['Average value']
         instrument_status = row['Instrument status']
@@ -89,13 +89,12 @@ def populate_db_measurements(session: Session):
     script_dir = os.path.dirname(__file__) 
     file_path = os.path.join(script_dir, 'data', 'Measurement_info.csv')
     
-    with ThreadPoolExecutor(max_workers=4) as executor:  # Adjust max_workers based on your system's capabilities
+    with ThreadPoolExecutor(max_workers=4) as executor:  
         futures = []
         processed = 0
-        start_time = time.time()  # Move timing outside the loop
+        start_time = time.time() 
 
         for chunk in pd.read_csv(file_path, chunksize=chunksize):
-            # Submit the processing of each chunk to the executor
             chunk['Measurement date'] = pd.to_datetime(chunk['Measurement date'])
             futures.append(executor.submit(process_and_insert_data, chunk, session))
 
